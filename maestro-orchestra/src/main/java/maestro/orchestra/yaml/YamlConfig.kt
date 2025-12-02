@@ -23,6 +23,7 @@ data class YamlConfig(
     val url: String?, // Raw url from YAML - preserved to distinguish web vs app configs
     val tags: List<String>? = emptyList(),
     val env: Map<String, String> = emptyMap(),
+    val data: Map<String, List<Any>>? = null, // Parametrized data: { key: [value1, value2, ...] }
     val onFlowStart: YamlOnFlowStart?,
     val onFlowComplete: YamlOnFlowComplete?,
     private val ext: MutableMap<String, Any?> = mutableMapOf<String, Any?>()

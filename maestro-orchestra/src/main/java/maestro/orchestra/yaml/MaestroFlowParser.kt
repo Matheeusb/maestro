@@ -463,6 +463,13 @@ object MaestroFlowParser {
             try {
                 val config = parseConfig(parser)
                 val commands = parseCommands(parser)
+                
+                // Handle data parametrization
+                if (config.data != null && config.data.isNotEmpty()) {
+                    return parseFlowWithDataParametrization(flowPath, config, commands)
+                }
+                
+                // Normal flow without parametrization
                 val maestroCommands = commands
                     .flatMap { it.toCommands(flowPath, config.appId) }
                     .withEnv(config.env)
@@ -471,6 +478,51 @@ object MaestroFlowParser {
                 throw wrapException(e, parser, flowPath, flow)
             }
         }
+    }
+
+    private fun parseFlowWithDataParametrization(
+        flowPath: Path,
+        config: YamlConfig,
+        commands: List<YamlFluentCommand>
+    ): List<MaestroCommand> {
+        // Convert data to proper format
+        val dataParametrization = try {
+            YamlDataParametrization(
+                config.data!!.mapValues { (_, values) ->
+                    values.map { it.toString() }
+                }
+            )
+        } catch (e: Exception) {
+            throw Exception("Invalid data parametrization: ${e.message}", e)
+        }
+
+        dataParametrization.validateOrThrow()
+
+        val result = mutableListOf<MaestroCommand>()
+        val iterationCount = dataParametrization.getIterationCount()
+
+        // Execute flow for each data iteration
+        for (iterationIndex in 0 until iterationCount) {
+            val dataSet = dataParametrization.getDataSetForIteration(iterationIndex)
+                ?: continue
+
+            // Merge config env with data set
+            val mergedEnv = config.env + dataSet
+
+            // Parse commands for this iteration
+            val maestroCommands = commands
+                .flatMap { it.toCommands(flowPath, config.appId) }
+                .withEnv(mergedEnv)
+
+            // Add config command only for the first iteration
+            if (iterationIndex == 0) {
+                result.add(config.toCommand(flowPath))
+            }
+
+            result.addAll(maestroCommands)
+        }
+
+        return result
     }
 
     fun parseCommand(flowPath: Path, appId: String, command: String): List<MaestroCommand> {

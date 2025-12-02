@@ -760,6 +760,38 @@ internal class YamlCommandReaderTest {
         assertThat(tapCommand.originalDescription).isEqualTo("Double tap on \"Submit\" at 50%, 90%")
     }
 
+    @Test
+    fun dataParametrization(
+        @YamlFile("131_data_flow.yaml") commands: List<Command>,
+    ) {
+        // When data parametrization is used, the commands should be repeated for each iteration
+        // and DefineVariablesCommand should be added before each iteration
+        
+        // Count DefineVariablesCommand - should be 3 (one per iteration)
+        val defineCommands = commands.filterIsInstance<DefineVariablesCommand>()
+        assertThat(defineCommands).hasSize(3)
+        
+        // Verify that each DefineVariablesCommand has the correct data
+        assertThat(defineCommands[0].env["productName"]).isEqualTo("Mobile Phone")
+        assertThat(defineCommands[0].env["category"]).isEqualTo("Electronics")
+        
+        assertThat(defineCommands[1].env["productName"]).isEqualTo("Laptop")
+        assertThat(defineCommands[1].env["category"]).isEqualTo("Electronics")
+        
+        assertThat(defineCommands[2].env["productName"]).isEqualTo("T-Shirt")
+        assertThat(defineCommands[2].env["category"]).isEqualTo("Apparel")
+        
+        // Count input text commands - should be 3 (one per iteration)
+        // Each will have ${category} as the text, which is substituted at runtime
+        val inputTextCommands = commands.filterIsInstance<InputTextCommand>()
+        assertThat(inputTextCommands).hasSize(3)
+        // Note: The text still contains ${category} which is evaluated at runtime
+        // with the jsEngine when the DefineVariablesCommand provides the env vars
+        inputTextCommands.forEach { cmd ->
+            assertThat(cmd.text).isEqualTo("\${category}")  // Literal ${category} in the command
+        }
+    }
+
 
     private fun commands(vararg commands: Command): List<MaestroCommand> =
         commands.map(::MaestroCommand).toList()

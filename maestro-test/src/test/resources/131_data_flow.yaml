@@ -1,0 +1,19 @@
+appId: org.wikimedia.wikipedia
+
+onFlowStart:
+- launchApp
+
+onFlowComplete: 
+- stopApp
+
+data: 
+  productName: ["Mobile Phone", "Laptop", "T-Shirt"]
+  category: ["Electronics", "Electronics", "Apparel"]
+---
+- repeat:
+    times: 3
+    commands:
+      - swipe:
+          direction: LEFT
+          duration: 400
+      - waitForAnimationToEnd

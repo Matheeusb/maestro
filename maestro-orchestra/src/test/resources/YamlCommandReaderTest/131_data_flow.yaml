@@ -1,0 +1,19 @@
+appId: com.example.app
+
+onFlowStart:
+  - launchApp
+
+onFlowComplete:
+  - stopApp
+
+data:
+  productName: ["Mobile Phone", "Laptop", "T-Shirt"]
+  category: ["Electronics", "Electronics", "Apparel"]
+---
+- launchApp
+- tapOn: Search
+- tapOn: Category
+- inputText: ${category}
+- tapOn: Item
+- tapOn: ${productName}
+- tapOn: Go
